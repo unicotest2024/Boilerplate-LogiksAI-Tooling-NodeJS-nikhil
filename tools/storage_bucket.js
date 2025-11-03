@@ -7,6 +7,8 @@ import {
 
 import { uploadLocalBucket } from "../utils/uploadBucketUtils.js";
 
+import { downloadLocalBucket } from "../utils/downloadBucketUtils.js";
+
 export async function run(message, params, file) {
   console.log("Storage bucket tool called with:", { message, params });
 
@@ -29,16 +31,7 @@ export async function run(message, params, file) {
     case "create_bucket": {
       const { bucket_name, storage_type } = params;
 
-      // if (!bucket_name || !storage_type) {
-      //   return {
-      //     status: "error",
-      //     message: "Missing required parameters: bucket_name or storage_type",
-      //   };
-      // }
-
-          
-          
-
+    
       switch (storage_type) {
         case "local":
           return await createLocalBucket(bucket_name);
@@ -56,13 +49,6 @@ export async function run(message, params, file) {
     case "upload_file": {
       const { bucket, storage_type, path, filename, mimetype, mode, exp } = params;
 
-      // 🛠 path is optional, so don’t force it to exist
-      // if (!bucket || !storage_type || !filename || !mimetype || !mode || !exp) {
-      //   return {
-      //     status: "error",
-      //     message: "Missing required parameters for upload_file",
-      //   };
-      // }
 
       switch (storage_type) {
         case "local":
@@ -75,6 +61,23 @@ export async function run(message, params, file) {
           return { status: "error", message: "OneDrive upload not yet implemented" };
         case "google_drive":
           return { status: "error", message: "Google Drive upload not yet implemented" };
+        default:
+          return { status: "error", message: "Unsupported storage type" };
+      }
+    }
+
+    case "download_file": {
+      const { fileId, storage_type, bucket } = params;
+
+      switch (storage_type) {
+        case "local":
+          return await downloadLocalBucket(fileId);
+        case "s3":
+          return { status: "error", message: "S3 download not yet implemented" };
+        case "one_drive":
+          return { status: "error", message: "OneDrive download not yet implemented" };
+        case "google_drive":
+          return { status: "error", message: "Google Drive download not yet implemented" };
         default:
           return { status: "error", message: "Unsupported storage type" };
       }

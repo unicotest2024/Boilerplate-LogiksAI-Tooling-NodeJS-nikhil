@@ -109,7 +109,7 @@ export async function uploadLocalBucket(
       bucket,
       size: fileSize || 0,  // ensure number
       mimetype,
-      exp,
+      exp:parseInt(exp),
       mode,
    // path: `/buckets/${bucket}${uploadPath ? `/${uploadPath}` : ""}/${filename}`,
       uploaded_at: new Date().toISOString(),

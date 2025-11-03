@@ -11,8 +11,14 @@ import {
   listNotWorkingTools
 } from "./run.js";
 
-import multer from "multer";
+
+
+import multer from "multer";// Resolve absolute path to the "buckets" directory
+
+
 dotenv.config();
+
+
 
 const DATA_DIR = "data";
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
@@ -75,25 +81,16 @@ export async function runRestServer() {
     }
   });
 
-  // app.post("/run", async (req, res) => {
-  //   try {
 
-     
-      
-  //     const { tool, message = "", ...params } = req.query;
-  //     if (!tool) return res.status(400).json({ error: "Tool required" });
-
-  //     const command = { command: "run", tool, message, params };
-  //     const result = await runTool(command);
-
-      
-  //     res.json(result);
-  //   } catch (err) {
-  //     res.status(500).json({ error: String(err) });
-  //   }
-  // });
 
 const upload = multer({ dest: "tmp/" }); // temporary upload directory
+
+//const app = express();
+
+const bucketsDir = path.join(process.cwd(), "buckets");
+
+// Serve static files from /buckets URL path
+app.use("/buckets", express.static(bucketsDir));
 
 app.post("/run", upload.single("file"), async (req, res) => {
   try {
