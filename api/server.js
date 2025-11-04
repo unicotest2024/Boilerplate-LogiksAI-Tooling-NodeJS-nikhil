@@ -11,13 +11,9 @@ import {
   listNotWorkingTools
 } from "./run.js";
 
-
-
 import multer from "multer";// Resolve absolute path to the "buckets" directory
-
 import downloadRouter from "../routes/downloadRouter.js";
-
-
+import { startDeleteExpiredFilesCron } from "../cron/deleteExpiredFiles.js";  // <-- add this
 
 dotenv.config();
 
@@ -88,35 +84,35 @@ export async function runRestServer() {
 
 
 
-const upload = multer({ dest: "tmp/" }); // temporary upload directory
-
-//const app = express();
-
-const bucketsDir = path.join(process.cwd(), "buckets");
-
-// Serve static files from /buckets URL path
-app.use("/buckets", express.static(bucketsDir));
-
-app.post("/run", upload.single("file"), async (req, res) => {
-  try {
-    const { tool, message = "", ...params } = req.query;
-    if (!tool) return res.status(400).json({ error: "Tool required" });
+  const upload = multer({ dest: "tmp/" }); // temporary upload directory
 
 
-    // Merge req.body (for content mode) and req.file (for attachment mode)
-    if (req.file) params.file = req.file;
-    else if (req.body.file) params.file = req.body.file;
 
-    // prepare command object
-    const command = { command: "run", tool, message, params };
+  const bucketsDir = path.join(process.cwd(), "buckets");
 
-    // run tool dynamically
-    const result = await runTool(command);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
-  }
-});
+  // Serve static files from /buckets URL path
+  app.use("/buckets", express.static(bucketsDir));
+
+  app.post("/run", upload.single("file"), async (req, res) => {
+    try {
+      const { tool, message = "", ...params } = req.query;
+      if (!tool) return res.status(400).json({ error: "Tool required" });
+
+
+      // Merge req.body (for content mode) and req.file (for attachment mode)
+      if (req.file) params.file = req.file;
+      else if (req.body.file) params.file = req.body.file;
+
+      // prepare command object
+      const command = { command: "run", tool, message, params };
+
+      // run tool dynamically
+      const result = await runTool(command);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
 
 
   app.get("/list_tools", (_, res) => res.json({ tools: listAvailableTools() }));
@@ -128,6 +124,10 @@ app.post("/run", upload.single("file"), async (req, res) => {
   );
 
   app.post("/", (_, res) => res.json({ status: "running" }));
+
+
+  //Add your cron start here
+  startDeleteExpiredFilesCron();
 
   const port = process.env.REST_PORT || 8000;
   app.listen(port, () =>

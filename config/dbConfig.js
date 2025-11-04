@@ -4,7 +4,7 @@ dotenv.config()
 
 
 export const DB_CONFIG = {
-  ENGINE: "mysql", // can be switched to "mongo" or "postgres" later
+  ENGINE: "mysql", // can be switched to "mysql" or "postgres" or "mongo"
   MYSQL: {
     host: process.env.MYSQL_HOST,
     user: process.env.MYSQL_USER,

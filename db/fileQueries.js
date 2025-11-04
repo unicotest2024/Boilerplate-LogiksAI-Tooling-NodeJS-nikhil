@@ -66,10 +66,11 @@ async function insertFileRecordMongo(fileData) {
     ...fileData,
     created_at: new Date(),
     edited_at: new Date(),
-     upload_status :"complete",
+    upload_status :"complete",
     blocked :"false",
     created_by : "root",
     edited_by : "root",
+    created_unix: Math.floor(Date.now() / 1000)
 
   };
 
