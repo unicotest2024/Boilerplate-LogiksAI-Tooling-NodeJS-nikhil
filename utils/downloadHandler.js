@@ -31,7 +31,7 @@ export async function handleSecureDownload(token, res) {
     if (!fileRecord) return res.status(404).json({ success: false, error: "File not found" });
 
     if (fileRecord.blocked === "true") {
-      return res.status(403).json({ success: false, error: "File is blocked" });
+      return res.status(403).json({ success: false, error: "File is expire" });
     }
 
     // 3. Verify file existence

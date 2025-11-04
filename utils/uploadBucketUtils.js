@@ -28,8 +28,6 @@ export async function uploadLocalBucket(
   file,
   overwrite = false
 ) {
-
-  
   try {
     const { error } = uploadFileSchema.validate({
       bucket,
@@ -42,7 +40,7 @@ export async function uploadLocalBucket(
       overwrite,
     });
     if (error) throw new Error(error.details[0].message);
-    
+
     if (storage_type !== "local") {
       throw new Error(`Unsupported storage type: ${storage_type}`);
     }
@@ -68,69 +66,51 @@ export async function uploadLocalBucket(
 
     // Handle file saving based on mode
     if (mode === "attachment") {
-      // Expect file object from multer
       if (!file || !file.path) {
         throw new Error("No file uploaded in attachment mode.");
       }
 
       await fs.promises.copyFile(file.path, destFilePath);
       if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-    }
-
-    else if (mode === "content") {
-      // Expect file as base64 string
+    } else if (mode === "content") {
       if (!file || typeof file !== "string") {
         throw new Error("File content must be a base64 string in content mode.");
       }
 
-      // Decode base64
       const buffer = Buffer.from(file, "base64");
       await fs.promises.writeFile(destFilePath, buffer);
-    }
-
-    else {
+    } else {
       throw new Error(`Invalid mode: ${mode}. Use "attachment" or "content".`);
     }
 
     const stats = fs.statSync(destFilePath);
     const fileSize = stats.size;
 
-   // console.log('',fileSize);
-
-    //console.log('uuuuuuu',filename);
-    
-    
-
     // Build metadata
     const metadata = {
-      file_name: filename,  // correct key name for DB,
+      file_name: filename,
       relative_path: `/buckets/${bucket}${uploadPath ? `/${uploadPath}` : ""}/${filename}`,
       storage_type,
       bucket,
-      size: fileSize || 0,  // ensure number
+      size: fileSize || 0,
       mimetype,
-      exp:parseInt(exp),
+      exp: parseInt(exp),
       mode,
-   // path: `/buckets/${bucket}${uploadPath ? `/${uploadPath}` : ""}/${filename}`,
       uploaded_at: new Date().toISOString(),
       url: `/buckets/${bucket}${uploadPath ? `/${uploadPath}` : ""}/${filename}`,
     };
 
-    console.log('meta',metadata);
-    
-
-    await insertFileRecord(metadata);
+    // Insert record and capture the returned ID
+    const insertResult = await insertFileRecord(metadata);
+    metadata.id = insertResult?.id || null;
 
     console.log("File uploaded and metadata inserted:", metadata);
-
-  //console.log("File uploaded successfully:", metadata);
 
     return {
       success: true,
       message: `File "${filename}" uploaded successfully to bucket "${bucket}"`,
       data: metadata,
     };
-
   } catch (error) {
     console.error("Error uploading file:", error.message);
     return { success: false, error: error.message };

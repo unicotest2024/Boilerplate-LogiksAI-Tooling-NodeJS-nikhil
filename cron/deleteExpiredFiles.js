@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import fs from "fs-extra";
+import fs from "fs/promises";
 import path from "path";
 import { getDBClient } from "../utils/dbClient.js";
 import { DB_CONFIG } from "../config/dbConfig.js";
@@ -11,10 +11,10 @@ const getUnixNow = () => Math.floor(Date.now() / 1000);
 export function startDeleteExpiredFilesCron() {
   console.log("Starting file cleanup cron...");
 
-  // Runs every hour — change for testing to "0 * * * *" for every minute
+  // Take cron schedule from env (default every 1 hour)
+  const cronSchedule = process.env.CRON_SCHEDULE || "*/1 * * * *"; //0 * * * *
 
-
-  cron.schedule("*/1 * * * *", async () => {
+  cron.schedule(cronSchedule, async () => {
     console.log("Running expired file cleanup...");
 
     try {
@@ -28,7 +28,7 @@ export function startDeleteExpiredFilesCron() {
           FROM file_tbl 
           WHERE blocked = 'false' 
             AND upload_status = 'complete'
-            AND (created_unix + exp) < ?
+            AND exp <= ?
         `,
           [nowUnix]
         );
@@ -43,7 +43,7 @@ export function startDeleteExpiredFilesCron() {
           .find({
             blocked: "false",
             upload_status: "complete",
-            $expr: { $lt: [{ $add: ["$created_unix", "$exp"] }, nowUnix] },
+            exp: { $lte: nowUnix },
           })
           .toArray();
 
@@ -55,6 +55,8 @@ export function startDeleteExpiredFilesCron() {
       console.error("Error in cleanup cron:", err);
     }
   });
+
+  console.log(`Cron job scheduled with: "${process.env.CRON_SCHEDULE || "0 * * * *"}"`);
 }
 
 // Main file deletion handler
@@ -94,16 +96,20 @@ async function handleFileDeletion(file, db, engine) {
 async function deleteLocalFile(file, db, engine) {
   const { id, relative_path } = file;
 
-  // If the path starts with '/', remove it to make it relative
-  const safeRelativePath = relative_path.startsWith('/')
+  // Ensure path is relative
+  const safeRelativePath = relative_path.startsWith("/")
     ? relative_path.slice(1)
     : relative_path;
 
-  // Construct absolute path relative to project root
+  // Construct absolute path
   const localPath = path.join(process.cwd(), safeRelativePath);
 
-  if (fs.existsSync(localPath)) {
-    await fs.remove(localPath);
+  try {
+    // Check if file exists
+    await fs.access(localPath);
+
+    // Delete file
+    await fs.unlink(localPath);
     console.log(`Deleted local file: ${localPath}`);
 
     // Mark file as blocked in DB
@@ -113,9 +119,13 @@ async function deleteLocalFile(file, db, engine) {
       await db.updateOne({ id }, { $set: { blocked: "true" } });
     }
 
-    console.log(`File ${id} marked as blocked.`);
-  } else {
-    console.warn(`Local file not found: ${localPath}`);
+    console.log(`File ${id} marked as expired.`);
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      console.warn(`Local file not found: ${localPath}`);
+    } else {
+      console.error(`Error deleting file ${localPath}:`, err);
+    }
   }
 }
 

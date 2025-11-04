@@ -12,10 +12,10 @@ export async function downloadLocalBucket(fileId, bucket) {
   try {
     // 1. Fetch metadata from DB
     const fileRecord = await getFileById(fileId, bucket);
-    if (!fileRecord) throw new Error("File not found or blocked.");
+    if (!fileRecord) throw new Error("File not found or expire.");
 
     if (fileRecord.blocked === "true") {
-      throw new Error("File is blocked and cannot be downloaded.");
+      throw new Error("File is expire and cannot be downloaded.");
     }
 
     // 2. Build absolute file path (internal use only)
