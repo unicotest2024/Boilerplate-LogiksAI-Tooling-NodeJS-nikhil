@@ -10,7 +10,10 @@ import { uploadLocalBucket } from "../utils/uploadBucketUtils.js";
 
 import { downloadLocalBucket } from "../utils/downloadBucketUtils.js";
 
-import { listLocalBucket } from "../utils/listFileUtils.js"; // ✅ new import
+import { listLocalBucket } from "../utils/listFileUtils.js"; 
+
+import { listLocalDirectories } from "../utils/listDirBucketUtils.js"; 
+
 
 
 export async function run(message, params, file) {
@@ -103,6 +106,24 @@ export async function run(message, params, file) {
           return { status: "error", message: "Unsupported storage type" };
       }
     }
+
+    case "list_dir": {
+      const { bucket, filepath = "", storage_type } = params;
+
+      switch (storage_type) {
+        case "local":
+          return await listLocalDirectories(bucket, filepath);
+        case "s3":
+          return { status: "error", message: "S3 list_dir not yet implemented" };
+        case "one_drive":
+          return { status: "error", message: "OneDrive list_dir not yet implemented" };
+        case "google_drive":
+          return { status: "error", message: "Google Drive list_dir not yet implemented" };
+        default:
+          return { status: "error", message: "Unsupported storage type" };
+      }
+    }
+
 
     default:
       return {
