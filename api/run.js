@@ -2,41 +2,7 @@ import fs from "fs";
 import path from "path";
 const toolsDir = path.resolve("tools");
 
-//const toolsDir = path.join(process.cwd(), "tool");
 
-
-// export async function runTool(command) {
-
-
-//   const toolName = (command.tool || "").toLowerCase();
-//   const message = command.message || "";
-//   const params = command.params || {};
-
-//   if (command.command === "list_tools") return listWorkingTools();
-//   else if (command.command === "list_tools_all") return listAvailableTools();
-
-//   try {
-//     const modulePath = path.join(toolsDir, `${toolName}.js`);
-
-
-//     if (!fs.existsSync(modulePath)) {
-//       return { status: "error", message: `Tool '${toolName}' not found` };
-//     }
-//     const toolModule = await import(`file://${modulePath}`);
-
-//     if (typeof toolModule.run === "function") {
-
-//       var response = await toolModule.run(message, params);
-
-//       //response.command = command;
-//       return { response };
-//     } else {
-//       return { status: "error", command: command, message: `Tool '${toolName}' missing run()` };
-//     }
-//   } catch (err) {
-//     return { status: "error", command: command, message: String(err) };
-//   }
-// }
 
 export async function runTool(command) {
   const toolName = (command.tool || "").toLowerCase();

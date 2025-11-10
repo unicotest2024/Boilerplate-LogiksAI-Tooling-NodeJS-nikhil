@@ -7,7 +7,12 @@ const router = express.Router();
 
 router.get("/download/:token", async (req, res) => {
   const { token } = req.params;
-  return handleSecureDownload(token, res);
+  const { download } = req.query;        // <-- flag from URL
+
+  // Pass it to the handler
+  return handleSecureDownload(token, res, download);
 });
 
 export default router;
+
+

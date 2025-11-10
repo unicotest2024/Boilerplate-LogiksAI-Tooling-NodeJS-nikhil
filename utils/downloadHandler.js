@@ -6,9 +6,10 @@ import { getFileById } from "../models/fileModel.js";
 /**
  * Handles secure file download logic.
  * @param {string} token - Signed download token
- * @param {object} res - Express response (used for res.download)
+ * @param {object} res - Express response
+ * @param {string} downloadFlag - "true" or "false" (from req.query.download)
  */
-export async function handleSecureDownload(token, res) {
+export async function handleSecureDownload(token, res, downloadFlag) {
   try {
     const secret = process.env.DOWNLOAD_TOKEN_SECRET;
     if (!secret) {
@@ -17,6 +18,7 @@ export async function handleSecureDownload(token, res) {
     }
 
     console.log("🔹 Incoming download request with token:", token);
+    console.log("Requested downloadFlag:", downloadFlag);
 
     // 1. Verify token → get payload
     let payload;
@@ -56,52 +58,57 @@ export async function handleSecureDownload(token, res) {
     }
 
     const stat = fs.statSync(filePath);
-    console.log(`File exists at ${filePath} with size: ${stat.size} bytes (${(stat.size / 1024).toFixed(2)} KB)`);
-
-    // 4. Stream file safely (instead of res.download)
     const fileName = fileRecord.file_name;
 
-    // Set correct headers manually
-    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    console.log(`File exists at ${filePath} with size: ${stat.size} bytes`);
+
+    // 4. Decide download behavior (INLINE vs ATTACHMENT)
+    let disposition;
+
+    if (downloadFlag === "true") {
+      disposition = `attachment; filename="${fileName}"`;
+    } else {
+      disposition = `inline; filename="${fileName}"`;
+    }
+
+
+    res.setHeader("Content-Disposition", disposition);
     res.setHeader("Content-Type", "application/octet-stream");
     res.setHeader("Content-Length", stat.size);
-    res.setHeader("Cache-Control", "no-transform"); // prevent proxy/middleware alteration
+    res.setHeader("Cache-Control", "no-transform");
     res.removeHeader("Transfer-Encoding");
 
+    console.log(`Content-Disposition applied: ${disposition}`);
     console.log("Starting file stream...");
 
-    // Create readable stream and pipe it to response
+    // 5. Stream file safely
     const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
-
-    // Track total bytes streamed
     let bytesSent = 0;
-    fileStream.on("data", (chunk) => {
+
+    fileStream.on("data", chunk => {
       bytesSent += chunk.length;
     });
 
-    // Handle stream errors
-    fileStream.on("error", (err) => {
+    fileStream.on("error", err => {
       console.error("Error streaming file:", err);
       if (!res.headersSent) {
-        res.status(500).json({ success: false, error: "Failed to download file" });
+        return res.status(500).json({ success: false, error: "Failed to download file" });
       } else {
         res.end();
       }
     });
 
-    // When done streaming
     fileStream.on("end", () => {
       console.log(`File download complete: ${fileName}`);
-      console.log(`Bytes sent: ${bytesSent} bytes (${(bytesSent / 1024).toFixed(2)} KB)`);
-      console.log(`Original file size: ${stat.size} bytes (${(stat.size / 1024).toFixed(2)} KB)`);
-
+      console.log(`Bytes sent: ${bytesSent} / ${stat.size}`);
       if (bytesSent !== stat.size) {
         console.warn("WARNING: Streamed bytes do not match file size!");
       } else {
         console.log("File streamed successfully with matching size.");
       }
     });
+
+    fileStream.pipe(res);
 
   } catch (err) {
     console.error("Unexpected error in download handler:", err);

@@ -1,15 +1,6 @@
 import Joi from 'joi';
 
-//import mime from 'mime-types';
 
-// Convert the extension to a proper MIME type
-// const mimeTypeFull = mime.lookup(mimetype);
-
-// if (!mimeTypeFull) {
-//   throw new Error(`Unsupported file type: ${mimetype}`);
-// }
-
-// You can also store it in metadata instead of raw extension
 
 
 export const createBucketSchema = Joi.object({

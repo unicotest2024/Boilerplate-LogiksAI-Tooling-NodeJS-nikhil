@@ -1,102 +1,110 @@
-# LogiksAI Tooling - Node.js
+# Simple README
 
-A Node.js-based tooling server that provides REST API, WebSocket and LPI functionality for running tools with background processing capabilities to provide hot plug tools to LogiksAI Server for tooling purpose.
-
-This project is a boilerplate for all future use.
+This project provides a Node.js based file storage API with support for creating buckets, uploading files, generating secure download URLs, and listing directories or files. The storage currently supports **local filesystem**.
 
 ## Features
 
-- Dynamically handle multiple tools.
-- Simple architecture for adding new tools.
-- MCP Compatibility
+* Create a local bucket
+* Upload files (attachment or base64 content)
+* Generate short-lived secure download URLs
+* Stream downloads through token-based verification
+* List folders inside a bucket
+* List files inside a bucket path
 
-## Installation
+## Tech Stack
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Set up environment variables:
-   ```bash
-   cp env_sample .env
-   ```
-   Edit `.env` with your configuration values.
+* Node.js + Express
+* Multer (file uploads)
+* Joi (validation)
+* JSON-based token system for secure downloads
+* Cron job for auto-deleting expired files
 
-## Usage
-
-Start the server:
-```bash
-npm start
-```
-
-This will simultaneously start:
-- REST API server
-- WebSocket server  
-- LAI Plugin client
-
-## Project Structure
+## Folder Structure
 
 ```
-├── api/
-│   ├── server.js       # Express REST API server
-│   ├── socket.js       # WebSocket server
-│   ├── laiplugin.js    # LAI Plugin client
-│   └── run.js          # Tool execution logic
-├── tools/
-│   └── test.js         # Example tool implementation
-├── data/               # Cached results storage
-├── samples/            # Sample files
-├── tools.json          # Tool definitions
-├── main.js             # Application entry point
-└── ecosystem.config.js # PM2 configuration
-```
-
-## Tool Configuration
-
-Tools are defined in `tools.json` with the following structure:
-```json
-{
-  "toolName": {
-    "name": "toolName",
-    "description": "Tool description",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "param1": {
-          "type": "string",
-          "description": "Parameter description"
-        }
-      },
-      "required": ["param1"]
-    },
-    "identitySchema": {
-      "type": "object",
-      "description": "Identity schema for API",
-      "properties": {
-        "apikey": {
-          "type": "string",
-          "description": "API key for authentication"
-        }
-      },
-      "required": ["apikey"]
-    }
-  }
-}
+buckets/            # All storage buckets
+cron/               # Expired file cleanup
+models/             # DB models
+utils/              # Bucket utils (upload, create, list, download)
+routes/             # Download route for token-based file streaming
+server/             # REST server logic
 ```
 
 ## API Endpoints
 
-The REST API provides endpoints for:
-- Tool execution with background processing
-- Retrieving cached results
-- Listing available tools
-- Health checks
+### 1. Create Bucket
 
-## Development
+```
+POST /run?tool=storage_bucket&message=create_bucket&storage_type=local&bucket_name=mybucket
+```
 
-The project uses ES modules (`"type": "module"`) and requires Node.js with support for modern JavaScript features.
+### 2. Upload File
 
-## License
+Attachment mode uses form-data:
 
-See [LICENSE](LICENSE) file for details.
+```
+POST /run?tool=storage_bucket&message=upload_file&storage_type=local&bucket=mybucket&filename=test.pdf&mimetype=application/pdf&mode=attachment
+```
+
+Content mode (base64):
+
+```
+POST /run?tool=storage_bucket&message=upload_file&storage_type=local&bucket=mybucket&filename=note.txt&mode=content
+Body: { "file": "<base64>" }
+```
+
+### 3. Generate Download URL
+
+```
+POST /run?tool=storage_bucket&message=download_file&storage_type=local&fileId=123&bucket=mybucket
+```
+
+Response contains:
+
+```
+/download/<token>
+```
+
+### 4. Actual File Download
+
+```
+GET /download/:token
+```
+
+Handled by `downloadRouter`.
+
+### 5. List Files
+
+```
+POST /run?tool=storage_bucket&message=list_files&storage_type=local&bucket=mybucket
+```
+
+### 6. List Folders
+
+```
+POST /run?tool=storage_bucket&message=list_dir&storage_type=local&bucket=mybucket
+```
+
+## Environment Variables
+
+```
+REST_PORT=8000
+DOWNLOAD_TOKEN_SECRET=yoursecret
+BASE_DOWNLOAD_URL=http://localhost:8000
+DOWNLOAD_TOKEN_EXPIRY=600
+```
+
+## Start Server
+
+```
+npm install
+node server.js or 
+npm run dev
+```
+
+## Notes
+
+* All buckets are created under `/buckets` root
+* Download tokens expire automatically
+* Cron job removes expired or blocked files
+* S3, OneDrive, Google Drive are placeholders for future expansion
