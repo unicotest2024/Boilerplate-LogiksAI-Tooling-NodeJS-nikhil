@@ -7,7 +7,7 @@ import { createDownloadToken } from "../utils/downloadToken.js";
 
 const BASE_URL = process.env.BASE_DOWNLOAD_URL || "http://localhost:8000"; // configure in env
 
-const EXP = process.env.DOWNLOAD_TOKEN_EXPIRY
+const EXP = process.env.DOWNLOAD_TOKEN_EXPIRY || 60*60;
 export async function downloadLocalBucket(fileId, bucket) {
   try {
     // 1. Fetch metadata from DB
@@ -25,7 +25,7 @@ export async function downloadLocalBucket(fileId, bucket) {
     }
 
     // 3. Create signed token (short-lived)
-    const secret = process.env.DOWNLOAD_TOKEN_SECRET;
+    const secret = process.env.DOWNLOAD_TOKEN_SECRET || 'cvbnm,defrtgyui';
 
     //console.log('uuuuuu',secret);
     

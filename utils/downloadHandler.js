@@ -11,7 +11,7 @@ import { getFileById } from "../models/fileModel.js";
  */
 export async function handleSecureDownload(token, res, downloadFlag) {
   try {
-    const secret = process.env.DOWNLOAD_TOKEN_SECRET;
+    const secret = process.env.DOWNLOAD_TOKEN_SECRET || 'cvbnm,defrtgyui';
     if (!secret) {
       console.error("DOWNLOAD_TOKEN_SECRET missing in environment.");
       return res.status(500).json({ success: false, error: "Server misconfigured" });
