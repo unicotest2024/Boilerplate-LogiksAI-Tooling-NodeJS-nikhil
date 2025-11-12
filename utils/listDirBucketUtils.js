@@ -1,6 +1,9 @@
 // utils/listDirBucketUtils.js
 import fs from "fs";
 import path from "path";
+import dotenv from "dotenv"
+
+dotenv.config();
 
 /**
  * List only directories (folders) from a given bucket path (local storage).
@@ -10,7 +13,8 @@ import path from "path";
  */
 export async function listLocalDirectories(bucket, filepath = "") {
   try {
-    const dirPath = path.join(process.cwd(), "buckets", bucket, filepath);
+    const baseDir = process.env.BASE_STORAGE_PATH || process.cwd();
+    const dirPath = path.join(baseDir, "buckets", bucket, filepath);
 
     if (!fs.existsSync(dirPath)) {
       return { status: "error", message: `Path not found: ${dirPath}` };

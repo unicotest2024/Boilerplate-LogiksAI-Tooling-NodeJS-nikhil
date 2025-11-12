@@ -2,6 +2,9 @@ import fs from "fs";
 import path from "path";
 import { getFileById } from "../models/fileModel.js";
 import { createDownloadToken } from "../utils/downloadToken.js";
+import dotenv from "dotenv"
+
+dotenv.config();
 
 
 
@@ -17,7 +20,11 @@ export async function downloadLocalBucket(fileId, bucket, downloadFlag = "false"
       throw new Error("File is expire and cannot be downloaded.");
     }
 
-    const filePath = path.join(process.cwd(), fileRecord.relative_path);
+    const baseDir = process.env.BASE_STORAGE_PATH || process.cwd(); 
+    const filePath = path.join(baseDir, fileRecord.relative_path);
+    console.log(filePath,'nnnn');
+    
+
     if (!fs.existsSync(filePath)) {
       throw new Error("File does not exist on server.");
     }

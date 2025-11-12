@@ -1,6 +1,9 @@
 import fs from "fs";
 import path from "path";
 import mime from "mime-types";
+import dotenv from "dotenv"
+
+dotenv.config();
 
 /**
  * List only files from a given bucket path (local storage).
@@ -8,7 +11,8 @@ import mime from "mime-types";
  */
 export async function listLocalBucket(bucket, filepath = "") {
   try {
-    const dirPath = path.join(process.cwd(), "buckets", bucket, filepath);
+    const baseDir = process.env.BASE_STORAGE_PATH || process.cwd();
+    const dirPath = path.join(baseDir, "buckets", bucket, filepath);
 
     if (!fs.existsSync(dirPath)) {
       return { status: "error", message: `Path not found: ${dirPath}` };

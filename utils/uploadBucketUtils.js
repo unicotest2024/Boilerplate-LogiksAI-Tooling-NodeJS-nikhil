@@ -2,6 +2,9 @@ import fs from "fs";
 import path from "path";
 import { uploadFileSchema } from "../validations/uploadFileValidation.js";
 import { insertFileRecord } from "../db/fileQueries.js"; // 👈 new import
+import dotenv from "dotenv"
+
+dotenv.config();
 
 /**
  * Upload a file to a local bucket folder.
@@ -45,10 +48,18 @@ export async function uploadLocalBucket(
       throw new Error(`Unsupported storage type: ${storage_type}`);
     }
 
+    //const baseDir = path.join(process.cwd(), "buckets");
+    
+
+    const baseDirt = process.env.BASE_STORAGE_PATH || process.cwd();
+    
     const baseDir = path.join(process.cwd(), "buckets");
+    
     const bucketDir = path.join(baseDir, bucket);
 
-    // Check if bucket exists
+    console.log(bucketDir);
+    
+    
     if (!fs.existsSync(bucketDir)) {
       throw new Error(`Bucket "${bucket}" does not exist.`);
     }
@@ -96,8 +107,7 @@ export async function uploadLocalBucket(
       mimetype,
       exp: parseInt(exp),
       mode,
-      uploaded_at: new Date().toISOString(),
-      url: `/buckets/${bucket}${uploadPath ? `/${uploadPath}` : ""}/${filename}`,
+      uploaded_at: new Date().toISOString()
     };
 
     // Insert record and capture the returned ID

@@ -3,6 +3,9 @@ import fs from "fs/promises";
 import path from "path";
 import { getDBClient } from "../utils/dbClient.js";
 import { DB_CONFIG } from "../config/dbConfig.js";
+import dotenv from "dotenv"
+
+dotenv.config();
 
 // Helper function to get current unix timestamp
 const getUnixNow = () => Math.floor(Date.now() / 1000);
@@ -102,7 +105,8 @@ async function deleteLocalFile(file, db, engine) {
     : relative_path;
 
   // Construct absolute path
-  const localPath = path.join(process.cwd(), safeRelativePath);
+  const baseDir = process.env.BASE_STORAGE_PATH || process.cwd();
+  const localPath = path.join(baseDir, safeRelativePath);
 
   try {
     // Check if file exists

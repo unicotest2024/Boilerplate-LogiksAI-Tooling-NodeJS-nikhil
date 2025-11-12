@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { createBucketSchema } from '../validations/createBucketValidation.js';
+import dotenv from "dotenv"
+
+dotenv.config();
 
 
 export async function createLocalBucket(bucket_name) {
@@ -10,8 +13,10 @@ export async function createLocalBucket(bucket_name) {
             bucket_name
           });
 
-    if (error) throw new Error(error.details[0].message);      
-    const parentdir = path.resolve(process.cwd(), '');
+    if (error) throw new Error(error.details[0].message); 
+
+    const baseDirt = process.env.BASE_STORAGE_PATH || process.cwd();      
+    const parentdir = path.resolve(baseDirt, '');
     const basedir = path.join(parentdir, "buckets");
 
     if (!fs.existsSync(basedir)) {

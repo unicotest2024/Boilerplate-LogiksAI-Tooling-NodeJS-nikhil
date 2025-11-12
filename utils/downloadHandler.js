@@ -3,6 +3,9 @@ import path from "path";
 import mime from "mime-types";
 import { verifyDownloadToken } from "./downloadToken.js";
 import { getFileById } from "../models/fileModel.js";
+import dotenv from "dotenv"
+
+dotenv.config();
 
 /**
  * Handles secure file download logic.
@@ -52,7 +55,8 @@ export async function handleSecureDownload(token, res, downloadFlag) {
     }
 
     // 3. Check physical file
-    const filePath = path.join(process.cwd(), fileRecord.relative_path);
+    const baseDir = process.env.BASE_STORAGE_PATH || process.cwd(); 
+    const filePath = path.join(baseDir, fileRecord.relative_path);
     if (!fs.existsSync(filePath)) {
       console.error("File not found on disk:", filePath);
       return res.status(404).json({ success: false, error: "File missing on server" });

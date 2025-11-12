@@ -1,6 +1,5 @@
 
-
-# File Storage Service (Local Bucket + Secure Token Downloads)
+# File Storage Tool
 
 This project is a Node.js powered file-storage API that supports creating buckets, uploading files, generating secure short-lived download URLs, and listing bucket contents.
 The storage layer currently uses the **local filesystem** with MySQL metadata tracking.
@@ -77,7 +76,7 @@ SOCKET_PORT=
 MYSQL_HOST=localhost
 MYSQL_USER=root
 MYSQL_PASSWORD=yourpassword
-MYSQL_DATABASE=manage_bucket
+MYSQL_DATABASE=file_storage_meta
 
 BASE_DOWNLOAD_URL=http://your-server-ip:8000
 
@@ -98,59 +97,31 @@ Important notes:
 
 ---
 
-## 3. MySQL Installation
-
-Ubuntu example:
+## 3. Create Required Tables in DB
 
 ```
-sudo apt update
-sudo apt install mysql-server
-sudo systemctl enable mysql
-sudo systemctl start mysql
-```
-
-Login:
-
-```
-mysql -u root -p
-```
-
-Create DB:
-
-```
-CREATE DATABASE manage_bucket;
-```
-
----
-
-## 4. Create Required Table
-
-Run inside MySQL:
-
-```
-USE manage_bucket;
 
 CREATE TABLE file_tbl (
-  id CHAR(36) NOT NULL DEFAULT (UUID()),               -- UUID for unique ID
-  file_name TEXT NOT NULL,                             -- File name
-  relative_path TEXT NOT NULL,                         -- Relative file path
-  storage_type ENUM('local', 's3', 'one_drive', 'google_drive') NOT NULL, -- Storage type
-  bucket TEXT NOT NULL,                           -- Bucket name
-  size BIGINT,                                         -- File size in bytes
-  mimetype VARCHAR(100),                               -- MIME type
-  exp BIGINT,                                          -- Expiration (UNIX timestamp)
-  upload_status ENUM('pending', 'complete', 'failed') DEFAULT 'pending', -- Upload status
-  blocked ENUM('true', 'false') DEFAULT 'false',       -- Blocked flag
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,      -- Creation time
-  created_unix BIGINT DEFAULT (UNIX_TIMESTAMP()),      -- Creation time in UNIX
-  edited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Edit time
-  created_by VARCHAR(100) DEFAULT 'root',              -- Created by
-  edited_by VARCHAR(100),                              -- Edited by
+  id CHAR(36) NOT NULL DEFAULT (UUID()),               
+  file_name TEXT NOT NULL,                             
+  relative_path TEXT NOT NULL,                         
+  storage_type ENUM('local', 's3', 'one_drive', 'google_drive') NOT NULL, 
+  bucket TEXT NOT NULL,                           
+  size BIGINT,                                         
+  mimetype VARCHAR(100),                               
+  exp BIGINT,                                          
+  upload_status ENUM('pending', 'complete', 'failed') DEFAULT 'pending', 
+  blocked ENUM('true', 'false') DEFAULT 'false',       
+  created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,      
+  created_unix BIGINT DEFAULT (UNIX_TIMESTAMP()),      
+  edited_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, 
+  created_by VARCHAR(100) DEFAULT 'root',              
+  edited_by VARCHAR(100),                              
   PRIMARY KEY (id)
 );
 ```
 
-Table roles:
+Table used for:
 
 * Tracks uploaded files
 * Records expiry timestamp (exp)
@@ -160,7 +131,7 @@ Table roles:
 
 ---
 
-## 5. DB Configuration File Location
+## 4. DB Configuration File Location
 
 Main DB config:
 
@@ -187,35 +158,24 @@ MYSQL: {
 }
 ```
 
-If your MySQL runs on default port:
+---
+
+## 5. Start the server using pm2:
 
 ```
-port: 3306
+npm install -g pm2
+```
+
+### Edit ecosystem_sample.config.js to your requirements
+
+### Start the server
+```
+pm2 start
 ```
 
 ---
 
-## 6. Install Node Modules
-
-```
-npm install
-```
-
-### Development mode:
-
-```
-npm run dev
-```
-
-### Production mode:
-
-```
-npm start
-```
-
----
-
-## 7. Cron Job (Auto Delete Expired Files)
+## 6. Cron Job (Auto Delete Expired Files)
 
 Cleanup logic lives in:
 
@@ -231,32 +191,6 @@ You can change cron schedule from `.env`:
 ```
 CRON_SCHEDULE=*/1 * * * *
 ```
-
-
-
-
-
-
----
-
-## 8. Deploying on Remote Server 
-
-1. SSH into server
-2. Install Node + MySQL
-3. Clone project
-4. Create `.env`
-5. Install dependencies
-6. Start server
-
-```
-npm install
-npm start
-```
-
-
-
-
-
 ---
 
 # API Endpoints
@@ -363,3 +297,4 @@ POST /run?tool=storage_bucket&message=list_dir&storage_type=local&bucket=mybucke
 ---
 
 
+```
